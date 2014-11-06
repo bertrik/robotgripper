@@ -11,9 +11,9 @@
 #define LF      0x0A
 #define CR      0x0D
 
-static const uint64_t address = 0x66996699L;  // So that's 0x0066996699
+static const uint64_t address = 0x66996699L;    // So that's 0x0066996699
 
-static RF24 rf(/*ce*/ 9, /*cs*/ 10);
+static RF24 rf( /*ce */ 9, /*cs */ 10);
 
 void setup(void)
 {
@@ -85,7 +85,7 @@ static void send_text(char *text)
     Serial.print("Sending: '");
     Serial.print(text);
     Serial.print("'...");
-    
+
     // send it
     int len = strlen(text);
     if (rf.write(text, len)) {
@@ -97,7 +97,7 @@ static void send_text(char *text)
 
 void loop(void)
 {
-    static char textbuffer[MAX_TEXTSIZE+1];
+    static char textbuffer[MAX_TEXTSIZE + 1];
 
     if (Serial.available() > 0) {
         char c = Serial.read();
@@ -106,5 +106,3 @@ void loop(void)
         }
     }
 }
-
-

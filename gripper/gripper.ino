@@ -3,34 +3,34 @@
 #include <SPI.h>
 #include <RF24.h>
 
-#include <Servo.h> 
- 
+#include <Servo.h>
+
 static Servo myservo;
-static RF24 rf(/*ce*/ 9, /*cs*/ 10);
- 
-int pos = 60;    // variable to store the servo position 
+static RF24 rf( /*ce */ 9, /*cs */ 10);
+
+int pos = 60;                   // variable to store the servo position 
 int lowerLimit = 45;
 int upperLimit = 117;
 
-static const uint64_t address = 0x66996699LL;  // So that's 0x0066996699
+static const uint64_t address = 0x66996699LL;   // So that's 0x0066996699
 
-void setup() 
+void setup()
 {
     /* Serial init */
     Serial.begin(9600);
     Serial.println("Waiting for input (type \"help\" for help)");
-    
+
     /* NRF init */
     rf.begin();
 
     rf.enableDynamicPayloads();
     rf.openReadingPipe(1, address);
     rf.startListening();
- 
+
     /* Servo init */
-    myservo.attach(14);  // attaches the servo on pin 9 to the servo object 
-} 
- 
+    myservo.attach(14);         // attaches the servo on pin 9 to the servo object 
+}
+
 static boolean readLine(char *line)
 {
     uint8_t buf[32];
@@ -40,7 +40,7 @@ static boolean readLine(char *line)
         boolean done = false;
         while (!done) {
             done = rf.read(buf, len);
-            memcpy(line, (const char *)buf, len);
+            memcpy(line, (const char *) buf, len);
             line[len] = 0;
         }
         return true;
@@ -48,80 +48,84 @@ static boolean readLine(char *line)
 
     return false;
 }
- 
-void updatePos(int newPos) {
-  if (newPos != pos) {
-    if (newPos > upperLimit || newPos < lowerLimit) {
-      Serial.print("Reached limit");
-      Serial.println(newPos, DEC);
+
+void updatePos(int newPos)
+{
+    if (newPos != pos) {
+        if (newPos > upperLimit || newPos < lowerLimit) {
+            Serial.print("Reached limit");
+            Serial.println(newPos, DEC);
+        } else {
+            myservo.write(newPos);
+            delay(15);
+            pos = newPos;
+        }
     } else {
-      myservo.write(newPos);
-      delay(15);
-      pos = newPos;
+        Serial.println("Already at desired position");
     }
-  } else {
-    Serial.println("Already at desired position");
-  }
 }
 
-void sweep() {
+void sweep()
+{
     char line[32];
-  int i;
-  while(true) {
-    int stepsize = 1;
-    for (i = lowerLimit; i < upperLimit; i+=stepsize) {
-      if (i >= upperLimit) {
-        delay(1000);
-      }
-      myservo.write(i);
-      delay(15);
+    int i;
+    while (true) {
+        int stepsize = 1;
+        for (i = lowerLimit; i < upperLimit; i += stepsize) {
+            if (i >= upperLimit) {
+                delay(1000);
+            }
+            myservo.write(i);
+            delay(15);
+        }
+        for (i = upperLimit; i > lowerLimit; i -= stepsize) {
+            if (i <= lowerLimit) {
+                delay(1000);
+            }
+            myservo.write(i);
+            delay(15);
+        }
+        if (readLine(line)) {
+            Serial.println("Aborting sweeping");
+            pos = i;
+            return;
+        }
     }
-    for (i = upperLimit; i > lowerLimit; i-=stepsize) {
-        if (i <= lowerLimit) {
-        delay(1000);
-      }
-      myservo.write(i);
-      delay(15);
-    }  
-    if (readLine(line)) {
-      Serial.println("Aborting sweeping");
-      pos = i;
-      return;
+
+}
+
+void openPercent(int openPercent)
+{
+    if (openPercent > 100 || openPercent < 0) {
+        Serial.print(openPercent);
+        Serial.println(" is not between 0% and 100%!");
+        return;
     }
-  }
+    int newTgt = (openPercent * 0.72) + 45;
+    updatePos(roundNbr(newTgt));
 
 }
 
-void openPercent(int openPercent) {
-  if (openPercent > 100 || openPercent < 0) {
-    Serial.print(openPercent);
-    Serial.println(" is not between 0% and 100%!");
-    return;
-  }
-  int newTgt = (openPercent * 0.72) + 45;
-  updatePos(roundNbr(newTgt));
-  
+int roundNbr(float raw)
+{
+    int result = -1;
+    int rawInt = (int) raw;
+    float remainder = raw - rawInt;
+    if (remainder < 0.5) {
+        result = floor(raw);
+    } else {
+        result = ceil(raw);
+    }
+    return result;
+
 }
 
-int roundNbr(float raw) {
-  int result = -1;
-  int rawInt = (int)raw;
-  float remainder = raw - rawInt;
-  if (remainder < 0.5) {
-    result = floor(raw);
-  } else {
-    result = ceil(raw);
-  }
-  return result;
-  
-}
-
-void loop() 
+void loop()
 {
     char line[32];
 
     boolean ok = readLine(line);
-  
+
     if (ok) {
         Serial.print("Received '");
         Serial.print(line);
@@ -138,10 +142,14 @@ void loop()
 
         if (strcmp(line, "help") == 0) {
             Serial.println("Available commands:");
-            Serial.println("\"0 ... 100\" ==> bring gipper in given % position");
+            Serial.
+                println
+                ("\"0 ... 100\" ==> bring gipper in given % position");
             Serial.println("\"open\" ==> open gripper fully");
             Serial.println("\"close\" ==> close gripper fully");
-            Serial.println("\"sweep\" ==> open/close until serial interruption");
+            Serial.
+                println
+                ("\"sweep\" ==> open/close until serial interruption");
             Serial.println("\"pos\" ==> display current servo position");
         } else if (strcmp(line, "open") == 0) {
             Serial.println("Fully opening");
@@ -160,6 +168,5 @@ void loop()
             Serial.print("Invalid command: ");
             Serial.println(line);
         }
-    } 
+    }
 }
-
