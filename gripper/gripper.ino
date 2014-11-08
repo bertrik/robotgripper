@@ -36,9 +36,9 @@ static boolean readLine(char *line)
     uint8_t buf[32];
 
     if (rf.available()) {
-        int len = rf.getDynamicPayloadSize();
         boolean done = false;
         while (!done) {
+            int len = rf.getDynamicPayloadSize();
             done = rf.read(buf, len);
             memcpy(line, (const char *) buf, len);
             line[len] = 0;
