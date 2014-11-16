@@ -8,6 +8,8 @@
 static Servo myservo;
 static RF24 rf( /*ce */ 9, /*cs */ 10);
 
+const int PIN_SERVO = A0;
+
 int pos = 60;                   // variable to store the servo position 
 int lowerLimit = 45;
 int upperLimit = 117;
@@ -28,7 +30,7 @@ void setup()
     rf.startListening();
 
     /* Servo init */
-    myservo.attach(14);         // attaches the servo on pin 9 to the servo object 
+    myservo.attach(PIN_SERVO);
 }
 
 static boolean readLine(char *line)
